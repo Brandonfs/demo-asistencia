@@ -119,6 +119,40 @@ async function loadAttendance() {
   renderAttendanceRows();
 }
 
+function formatAttendanceDate(row) {
+  if (row.scanDate) {
+    const [year, month, day] = row.scanDate.split('-');
+    const parsedDate = new Date(Number(year), Number(month) - 1, Number(day));
+    return parsedDate.toLocaleDateString('es-ES');
+  }
+
+  if (row.scannedAt) {
+    return new Date(row.scannedAt).toLocaleDateString('es-ES');
+  }
+
+  return '-';
+}
+
+function getLateAccumulations(row) {
+  if (!activeLateThreshold || (row.attendanceType || 'entrada') !== 'entrada') {
+    return 0;
+  }
+
+  const rowTime = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
+  if (!rowTime || rowTime <= activeLateThreshold) {
+    return 0;
+  }
+
+  return attendanceRecords.filter((item) => {
+    if ((item.attendanceType || 'entrada') !== 'entrada' || item.employeeId !== row.employeeId) {
+      return false;
+    }
+
+    const itemTime = item.scannedAt ? new Date(item.scannedAt).toTimeString().slice(0, 5) : null;
+    return itemTime && itemTime > activeLateThreshold;
+  }).length;
+}
+
 function renderAttendanceRows() {
   if (!attendanceRows) {
     return;
@@ -127,7 +161,8 @@ function renderAttendanceRows() {
   const filteredRecords = attendanceRecords.filter((row) => {
     const matchesType = activeAttendanceFilter === 'all' || (row.attendanceType || 'entrada') === activeAttendanceFilter;
     const timeValue = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
-    const matchesLate = !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
+    const isEntry = (row.attendanceType || 'entrada') === 'entrada';
+    const matchesLate = activeAttendanceFilter === 'salida' || !isEntry || !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
     return matchesType && matchesLate;
   });
 
@@ -137,13 +172,19 @@ function renderAttendanceRows() {
           const verified = row.verified === 1 || row.verified === true;
           const scannedTime = row.scannedAt ? new Date(row.scannedAt).toLocaleTimeString('es-ES') : '-';
           const isLate = activeLateThreshold && row.attendanceType === 'entrada' && row.scannedAt && new Date(row.scannedAt).toTimeString().slice(0, 5) > activeLateThreshold;
+          const lateAccumulations = isLate ? getLateAccumulations(row) : 0;
+          const detailText = isLate ? `Tardanzas acumuladas: ${lateAccumulations}` : verified ? 'Verificado' : 'Pendiente';
           const rowClass = isLate ? 'late-row' : '';
           return `
             <tr class="${rowClass}">
+              <td>${formatAttendanceDate(row)}</td>
               <td>${row.employeeName}</td>
               <td>${row.branchName || row.branchId}</td>
               <td>${row.attendanceType || 'entrada'}</td>
-              <td>${scannedTime}</td>
+              <td>
+                <div>${scannedTime}</div>
+                ${isLate ? `<small>${detailText}</small>` : ''}
+              </td>
               <td>
                 <button class="verify-btn" data-id="${row.id}" data-verified="${verified ? 'true' : 'false'}">
                   ${verified ? 'Quitar verificación' : 'Verificar'}
@@ -153,7 +194,7 @@ function renderAttendanceRows() {
           `;
         })
         .join('')
-    : '<tr><td colspan="5">No hay registros aún</td></tr>';
+    : '<tr><td colspan="6">No hay registros aún</td></tr>';
 }
 
 function applyAttendanceFilters() {
@@ -171,21 +212,28 @@ function exportAttendance(format) {
     .filter((row) => {
       const matchesType = activeAttendanceFilter === 'all' || (row.attendanceType || 'entrada') === activeAttendanceFilter;
       const timeValue = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
-      const matchesLate = !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
+      const isEntry = (row.attendanceType || 'entrada') === 'entrada';
+      const matchesLate = activeAttendanceFilter === 'salida' || !isEntry || !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
       return matchesType && matchesLate;
     })
-    .map((row) => ({
-      Trabajador: row.employeeName,
-      Sede: row.branchName || row.branchId,
-      Tipo: row.attendanceType || 'entrada',
-      Hora: new Date(row.scannedAt).toLocaleTimeString('es-ES'),
-      Estado: row.verified ? 'Verificado' : 'Pendiente',
-    }));
+    .map((row) => {
+      const isLate = activeLateThreshold && (row.attendanceType || 'entrada') === 'entrada' && row.scannedAt && new Date(row.scannedAt).toTimeString().slice(0, 5) > activeLateThreshold;
+      const lateAccumulations = isLate ? getLateAccumulations(row) : 0;
+      const detalle = isLate ? `Tardanzas acumuladas: ${lateAccumulations}` : row.verified ? 'Verificado' : 'Pendiente';
+      return {
+        Fecha: formatAttendanceDate(row),
+        Trabajador: row.employeeName,
+        Sede: row.branchName || row.branchId,
+        Tipo: row.attendanceType || 'entrada',
+        Hora: new Date(row.scannedAt).toLocaleTimeString('es-ES'),
+        Detalle: detalle,
+      };
+    });
 
   if (format === 'excel') {
     const csv = [
-      ['Trabajador', 'Sede', 'Tipo', 'Hora', 'Estado'],
-      ...rows.map((row) => [row.Trabajador, row.Sede, row.Tipo, row.Hora, row.Estado]),
+      ['Fecha', 'Trabajador', 'Sede', 'Tipo', 'Hora', 'Detalle'],
+      ...rows.map((row) => [row.Fecha, row.Trabajador, row.Sede, row.Tipo, row.Hora, row.Detalle]),
     ]
       .map((line) => line.join(','))
       .join('\n');
@@ -209,21 +257,23 @@ function exportAttendance(format) {
           <table style="width:100%; border-collapse:collapse;">
             <thead>
               <tr>
+                <th style="border:1px solid #999; padding:6px;">Fecha</th>
                 <th style="border:1px solid #999; padding:6px;">Trabajador</th>
                 <th style="border:1px solid #999; padding:6px;">Sede</th>
                 <th style="border:1px solid #999; padding:6px;">Tipo</th>
                 <th style="border:1px solid #999; padding:6px;">Hora</th>
-                <th style="border:1px solid #999; padding:6px;">Estado</th>
+                <th style="border:1px solid #999; padding:6px;">Detalle</th>
               </tr>
             </thead>
             <tbody>
               ${rows.map((row) => `
                 <tr>
+                  <td style="border:1px solid #999; padding:6px;">${row.Fecha}</td>
                   <td style="border:1px solid #999; padding:6px;">${row.Trabajador}</td>
                   <td style="border:1px solid #999; padding:6px;">${row.Sede}</td>
                   <td style="border:1px solid #999; padding:6px;">${row.Tipo}</td>
                   <td style="border:1px solid #999; padding:6px;">${row.Hora}</td>
-                  <td style="border:1px solid #999; padding:6px;">${row.Estado}</td>
+                  <td style="border:1px solid #999; padding:6px;">${row.Detalle}</td>
                 </tr>
               `).join('')}
             </tbody>
