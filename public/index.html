@@ -3,125 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Asistencia por roles</title>
+    <title>Asistencia | Inicio</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="container">
       <section class="hero">
-        <h1>Módulos de asistencia por rol</h1>
-        <p>Administra sedes y verificación, el usuario solo ingresa CC y nombre, y el módulo QR controla la sede y el tipo de registro.</p>
+        <h1>Demo de asistencia por módulos</h1>
+        <p>Selecciona el flujo que quieres mostrar o probar.</p>
       </section>
 
-      <section class="panel role-switcher-panel">
-        <label for="roleSelect">Selecciona el módulo</label>
-        <select id="roleSelect">
-          <option value="user">Usuario</option>
-          <option value="qr">QR</option>
-          <option value="admin">Admin</option>
-        </select>
-      </section>
-
-      <section id="userPanel" class="panel role-panel">
-        <h2>Usuario</h2>
-        <p>Ingresa tus datos, abre la cámara y escanea el QR para registrar tu asistencia.</p>
-        <form id="userForm" class="grid compact">
-          <label>
-            CC
-            <input id="userDocument" required placeholder="Ej. 1020304050" />
-          </label>
-          <label>
-            Nombre completo
-            <input id="userName" required placeholder="Ej. Laura Martínez" />
-          </label>
-          <button type="submit">Listo para escanear</button>
-        </form>
-        <div id="statusBanner" class="status-banner">Ingresa tus datos para continuar.</div>
-        <button id="startUserScannerBtn" class="secondary">Abrir cámara</button>
-        <div class="reader-wrapper">
-          <div class="reader-frame"></div>
-          <video id="userReader" class="reader" autoplay playsinline muted></video>
-        </div>
-      </section>
-
-      <section id="qrPanel" class="panel role-panel hidden">
-        <h2>Módulo QR</h2>
-        <div class="grid compact">
-          <label>
-            Sede
-            <select id="qrBranchSelect" required></select>
-          </label>
-          <label>
-            Tipo
-            <select id="qrTypeSelect">
-              <option value="entrada">Entrada</option>
-              <option value="salida">Salida</option>
-            </select>
-          </label>
-          <button id="generateQrBtn" type="button">Generar QR</button>
-        </div>
-
-        <div id="qrResult" class="qr-card hidden">
-          <h3>QR activo</h3>
-          <img id="qrImage" alt="QR de asistencia" />
-          <p id="qrPayload"></p>
-        </div>
-      </section>
-
-      <section id="adminPanel" class="panel role-panel hidden">
-        <h2>Admin</h2>
-        <div id="adminAuthPanel">
-          <form id="adminLoginForm" class="grid compact">
-            <label>
-              Usuario
-              <input id="adminUsername" required placeholder="admin" />
-            </label>
-            <label>
-              Contraseña
-              <input id="adminPassword" type="password" required placeholder="admin123" />
-            </label>
-            <button type="submit">Ingresar</button>
-          </form>
-          <p id="adminStatus" class="status">Inicia sesión con admin / admin123.</p>
-        </div>
-
-        <div id="adminTools" class="hidden">
-          <form id="branchForm" class="grid compact">
-            <label>
-              Nombre de la sede
-              <input id="branchName" required placeholder="Ej. Sede Norte" />
-            </label>
-            <label>
-              Ubicación
-              <input id="branchLocation" placeholder="Ej. Medellín" />
-            </label>
-            <button type="submit">Agregar sede</button>
-          </form>
-
-          <div class="toolbar">
-            <button id="logoutAdminBtn" class="secondary" type="button">Cerrar sesión</button>
-          </div>
-
-          <h3>Registros de asistencia</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Trabajador</th>
-                <th>Sede</th>
-                <th>Tipo</th>
-                <th>Hora</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Dispositivo</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody id="attendanceRows"></tbody>
-          </table>
-        </div>
+      <section class="panel landing-grid">
+        <a class="landing-card" href="/user.html">
+          <h2>Usuario</h2>
+          <p>Registro del empleado, cámara y escaneo del QR.</p>
+        </a>
+        <a class="landing-card" href="/qr.html">
+          <h2>QR</h2>
+          <p>Generación del código QR por sede y tipo de registro.</p>
+        </a>
+        <a class="landing-card" href="/admin.html">
+          <h2>Admin</h2>
+          <p>Gestión de sedes y revisión de registros.</p>
+        </a>
       </section>
     </main>
-
-    <script src="/app.js"></script>
   </body>
 </html>

@@ -1,9 +1,9 @@
-const roleSelect = document.getElementById('roleSelect');
-const rolePanels = document.querySelectorAll('.role-panel');
 const userForm = document.getElementById('userForm');
 const userStatus = document.getElementById('userStatus') || document.getElementById('statusBanner');
 const userDocumentInput = document.getElementById('userDocument');
 const userNameInput = document.getElementById('userName');
+const userEmailInput = document.getElementById('userEmail');
+const userPhoneInput = document.getElementById('userPhone');
 const startUserScannerBtn = document.getElementById('startUserScannerBtn');
 const userReader = document.getElementById('userReader');
 const qrBranchSelect = document.getElementById('qrBranchSelect');
@@ -32,13 +32,11 @@ let scanCooldown = 0;
 let statusResetTimer = null;
 let barcodeDetector = null;
 
-function switchRole(role) {
-  rolePanels.forEach((panel) => {
-    panel.classList.toggle('hidden', panel.id !== `${role}Panel`);
-  });
-}
-
 function showStatusMessage(message, durationMs = 5000, options = {}) {
+  if (!userStatus) {
+    return;
+  }
+
   userStatus.textContent = message;
   if (statusResetTimer) {
     clearTimeout(statusResetTimer);
@@ -85,11 +83,19 @@ function stopQrTimer() {
 }
 
 function setAdminAuthenticated(isLoggedIn) {
-  adminAuthPanel.classList.toggle('hidden', isLoggedIn);
-  adminTools.classList.toggle('hidden', !isLoggedIn);
+  if (adminAuthPanel) {
+    adminAuthPanel.classList.toggle('hidden', isLoggedIn);
+  }
+  if (adminTools) {
+    adminTools.classList.toggle('hidden', !isLoggedIn);
+  }
 }
 
 async function loadBranches() {
+  if (!qrBranchSelect) {
+    return;
+  }
+
   const res = await fetch('/api/branches');
   const branches = await res.json();
   const options = branches.map((branch) => `<option value="${branch.id}">${branch.name}</option>`).join('');
@@ -97,6 +103,10 @@ async function loadBranches() {
 }
 
 async function loadAttendance() {
+  if (!attendanceRows) {
+    return;
+  }
+
   const res = await fetch('/api/attendance');
   const data = await res.json();
 
@@ -104,12 +114,25 @@ async function loadAttendance() {
     ? data
         .map((row) => {
           const verified = row.verified === 1 || row.verified === true;
+          let deviceLabel = '-';
+          if (row.deviceInfo) {
+            try {
+              const info = JSON.parse(row.deviceInfo);
+              deviceLabel = info.platform || info.browser || '-';
+            } catch (error) {
+              deviceLabel = '-';
+            }
+          }
+
           return `
             <tr>
               <td>${row.employeeName}</td>
               <td>${row.branchName || row.branchId}</td>
               <td>${row.attendanceType || 'entrada'}</td>
               <td>${new Date(row.scannedAt).toLocaleTimeString('es-ES')}</td>
+              <td>${row.employeeEmail || '-'}</td>
+              <td>${row.employeePhone || '-'}</td>
+              <td>${deviceLabel}</td>
               <td>
                 <button class="verify-btn" data-id="${row.id}" data-verified="${verified ? 'true' : 'false'}">
                   ${verified ? 'Quitar verificación' : 'Verificar'}
@@ -119,7 +142,7 @@ async function loadAttendance() {
           `;
         })
         .join('')
-    : '<tr><td colspan="5">No hay registros aún</td></tr>';
+    : '<tr><td colspan="8">No hay registros aún</td></tr>';
 }
 
 async function generateQr() {
@@ -156,21 +179,29 @@ function startQrRotation() {
   }, 10000);
 }
 
-userForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  currentUser = {
-    document: userDocumentInput.value.trim(),
-    name: userNameInput.value.trim(),
-  };
+if (userForm) {
+  userForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    currentUser = {
+      document: userDocumentInput?.value.trim() || '',
+      name: userNameInput?.value.trim() || '',
+      email: userEmailInput?.value.trim() || '',
+      phone: userPhoneInput?.value.trim() || '',
+    };
 
-  if (!currentUser.document || !currentUser.name) {
-    userStatus.textContent = 'Completa CC y nombre para continuar.';
-    return;
-  }
+    if (!currentUser.document || !currentUser.name) {
+      if (userStatus) {
+        userStatus.textContent = 'Completa CC y nombre para continuar.';
+      }
+      return;
+    }
 
-  localStorage.setItem('attendanceUser', JSON.stringify(currentUser));
-  userStatus.textContent = `Listo para registrar asistencia: ${currentUser.name}`;
-});
+    localStorage.setItem('attendanceUser', JSON.stringify(currentUser));
+    if (userStatus) {
+      userStatus.textContent = `Listo para registrar asistencia: ${currentUser.name}`;
+    }
+  });
+}
 
 async function openCameraScanner() {
   if (!currentUser) {
@@ -267,6 +298,8 @@ async function openCameraScanner() {
             token,
             employeeId: currentUser.document,
             employeeName: currentUser.name,
+            employeeEmail: currentUser.email,
+            employeePhone: currentUser.phone,
           }),
         });
         const dataRes = await res.json();
@@ -281,11 +314,10 @@ async function openCameraScanner() {
           return;
         }
 
-        const successMessage = dataRes.message || 'Asistencia registrada.';
-        showStatusMessage(successMessage, 5000);
+        showStatusMessage(dataRes.message || 'Asistencia registrada.', 5000);
         loadAttendance();
         qrDetectionActive = false;
-        stopCameraScanner(successMessage, 5000);
+        stopCameraScanner(dataRes.message || 'Asistencia registrada.', 5000);
       } catch (error) {
         showStatusMessage('Mueve el teléfono lentamente y centra el QR dentro del marco.', 2000);
       }
@@ -315,34 +347,36 @@ if (qrBranchSelect) {
 if (qrTypeSelect) {
   qrTypeSelect.addEventListener('change', generateQr);
 }
-if (roleSelect) {
-  roleSelect.addEventListener('change', (event) => switchRole(event.target.value));
-}
 
 if (adminLoginForm) {
   adminLoginForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const username = document.getElementById('adminUsername').value.trim();
-  const password = document.getElementById('adminPassword').value.trim();
+    event.preventDefault();
+    const username = document.getElementById('adminUsername').value.trim();
+    const password = document.getElementById('adminPassword').value.trim();
 
-  const res = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password }),
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (adminStatus) {
+        adminStatus.textContent = data.error || 'No se pudo iniciar sesión.';
+      }
+      return;
+    }
+
+    authToken = data.token;
+    localStorage.setItem('attendanceAdminToken', data.token);
+    setAdminAuthenticated(true);
+    if (adminStatus) {
+      adminStatus.textContent = `Administrador conectado: ${data.user.fullName}`;
+    }
+    await loadBranches();
+    await loadAttendance();
   });
-  const data = await res.json();
-  if (!res.ok) {
-    adminStatus.textContent = data.error || 'No se pudo iniciar sesión.';
-    return;
-  }
-
-  authToken = data.token;
-  localStorage.setItem('attendanceAdminToken', data.token);
-  setAdminAuthenticated(true);
-  adminStatus.textContent = `Administrador conectado: ${data.user.fullName}`;
-  await loadBranches();
-  await loadAttendance();
-});
+}
 
 if (logoutAdminBtn) {
   logoutAdminBtn.addEventListener('click', async () => {
@@ -355,33 +389,36 @@ if (logoutAdminBtn) {
     authToken = null;
     localStorage.removeItem('attendanceAdminToken');
     setAdminAuthenticated(false);
-    adminStatus.textContent = 'Sesión cerrada.';
+    if (adminStatus) {
+      adminStatus.textContent = 'Sesión cerrada.';
+    }
   });
 }
 
 if (branchForm) {
   branchForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const payload = {
-    name: document.getElementById('branchName').value.trim(),
-    location: document.getElementById('branchLocation').value.trim(),
-  };
+    event.preventDefault();
+    const payload = {
+      name: document.getElementById('branchName').value.trim(),
+      location: document.getElementById('branchLocation').value.trim(),
+    };
 
-  const res = await fetch('/api/branches', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify(payload),
+    const res = await fetch('/api/branches', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      document.getElementById('branchName').value = '';
+      document.getElementById('branchLocation').value = '';
+      loadBranches();
+    }
   });
-
-  if (res.ok) {
-    document.getElementById('branchName').value = '';
-    document.getElementById('branchLocation').value = '';
-    loadBranches();
-  }
-});
+}
 
 if (attendanceRows) {
   attendanceRows.addEventListener('click', async (event) => {
@@ -408,9 +445,13 @@ async function initializeSession() {
   const savedUser = localStorage.getItem('attendanceUser');
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
-    userDocumentInput.value = currentUser.document || '';
-    userNameInput.value = currentUser.name || '';
-    userStatus.textContent = `Sesión restaurada para ${currentUser.name}`;
+    if (userDocumentInput) userDocumentInput.value = currentUser.document || '';
+    if (userNameInput) userNameInput.value = currentUser.name || '';
+    if (userEmailInput) userEmailInput.value = currentUser.email || '';
+    if (userPhoneInput) userPhoneInput.value = currentUser.phone || '';
+    if (userStatus) {
+      userStatus.textContent = `Sesión restaurada para ${currentUser.name}`;
+    }
   }
 
   const savedToken = localStorage.getItem('attendanceAdminToken');
@@ -422,7 +463,9 @@ async function initializeSession() {
     if (res.ok) {
       const data = await res.json();
       setAdminAuthenticated(true);
-      adminStatus.textContent = `Administrador conectado: ${data.user.fullName}`;
+      if (adminStatus) {
+        adminStatus.textContent = `Administrador conectado: ${data.user.fullName}`;
+      }
       await loadAttendance();
     } else {
       localStorage.removeItem('attendanceAdminToken');
@@ -442,4 +485,3 @@ if (generateQrBtn) {
   startQrRotation();
 }
 initializeSession();
-switchRole(roleSelect?.value || 'user');
