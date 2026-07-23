@@ -28,11 +28,26 @@ let qrScanTimer = null;
 let lastScanValue = null;
 let qrDetectionActive = false;
 let scanCooldown = 0;
+let statusResetTimer = null;
 
 function switchRole(role) {
   rolePanels.forEach((panel) => {
     panel.classList.toggle('hidden', panel.id !== `${role}Panel`);
   });
+}
+
+function showStatusMessage(message, durationMs = 5000) {
+  userStatus.textContent = message;
+  if (statusResetTimer) {
+    clearTimeout(statusResetTimer);
+  }
+  statusResetTimer = setTimeout(() => {
+    if (currentUser?.name) {
+      userStatus.textContent = `Listo para registrar asistencia: ${currentUser.name}`;
+    } else {
+      userStatus.textContent = 'Ingresa tus datos para continuar.';
+    }
+  }, durationMs);
 }
 
 function stopQrTimer() {
@@ -155,7 +170,7 @@ async function openCameraScanner() {
     userReader.srcObject = mediaStream;
     userReader.playsInline = true;
     userReader.autoplay = true;
-    userStatus.textContent = 'Cámara lista. Enfoca el QR para registrar la asistencia.';
+    showStatusMessage('Cámara lista. Enfoca el QR para registrar la asistencia.', 5000);
     qrDetectionActive = true;
     scanCooldown = 0;
 
@@ -192,7 +207,7 @@ async function openCameraScanner() {
         }
         lastScanValue = token;
         scanCooldown = 3000;
-        userStatus.textContent = 'QR detectado. Registrando asistencia...';
+        showStatusMessage('QR detectado. Registrando asistencia...', 5000);
 
         const res = await fetch('/api/attendance/scan', {
           method: 'POST',
@@ -204,7 +219,7 @@ async function openCameraScanner() {
           }),
         });
         const dataRes = await res.json();
-        userStatus.textContent = dataRes.message || dataRes.error || 'Asistencia registrada.';
+        showStatusMessage(dataRes.message || dataRes.error || 'Asistencia registrada.', 5000);
         if (res.ok) {
           loadAttendance();
           qrDetectionActive = false;
