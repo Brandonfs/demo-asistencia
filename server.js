@@ -72,8 +72,6 @@ function initDatabase() {
         branchId INTEGER NOT NULL,
         employeeId TEXT NOT NULL,
         employeeName TEXT NOT NULL,
-        employeeEmail TEXT,
-        employeePhone TEXT,
         scannedAt TEXT NOT NULL,
         scanDate TEXT NOT NULL,
         deviceInfo TEXT,
@@ -95,12 +93,6 @@ function initDatabase() {
     db.run('ALTER TABLE attendance_records ADD COLUMN verified INTEGER NOT NULL DEFAULT 0', (err) => {
       if (err && !/duplicate column/i.test(err.message)) {
         console.warn('No se pudo agregar verified:', err.message);
-      }
-    });
-
-    db.run('ALTER TABLE attendance_records ADD COLUMN employeePhone TEXT', (err) => {
-      if (err && !/duplicate column/i.test(err.message)) {
-        console.warn('No se pudo agregar employeePhone:', err.message);
       }
     });
 
@@ -239,7 +231,7 @@ app.post('/api/qr', (req, res) => {
 });
 
 app.post('/api/attendance/scan', (req, res) => {
-  const { token, employeeId, employeeName } = req.body;
+  const { token, employeeId, employeeName, employeeEmail, employeePhone } = req.body;
   if (!token || !employeeId || !employeeName) {
     return res.status(400).json({ error: 'Faltan datos para registrar la asistencia' });
   }
@@ -265,9 +257,9 @@ app.post('/api/attendance/scan', (req, res) => {
     db.run(
       `
         INSERT INTO attendance_records (
-          branchId, employeeId, employeeName, employeeEmail, scannedAt, scanDate, deviceInfo, source, qrToken, attendanceType, verified, createdAt
+          branchId, employeeId, employeeName, scannedAt, scanDate, deviceInfo, source, qrToken, attendanceType, verified, createdAt
         )
-        VALUES (?, ?, ?, '', ?, ?, ?, 'qr', ?, ?, 0, ?)
+        VALUES (?, ?, ?, ?, ?, ?, 'qr', ?, ?, 0, ?)
       `,
       [session.branchId, employeeId, employeeName, scannedAt, scanDate, deviceInfo, token, session.attendanceType || 'entrada', scannedAt],
       function (insertErr) {

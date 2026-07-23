@@ -49,6 +49,24 @@
             <button id="logoutAdminBtn" class="secondary" type="button">Cerrar sesión</button>
           </div>
 
+          <div class="filters-panel">
+            <label>
+              Tipo
+              <select id="attendanceTypeFilter">
+                <option value="all">Todos</option>
+                <option value="entrada">Entrada</option>
+                <option value="salida">Salida</option>
+              </select>
+            </label>
+            <label>
+              Hora límite para tardanza
+              <input id="lateThresholdInput" type="time" value="08:30" />
+            </label>
+            <button id="applyFiltersBtn" type="button">Aplicar filtros</button>
+            <button id="exportExcelBtn" type="button" class="secondary">Exportar Excel</button>
+            <button id="exportPdfBtn" type="button" class="secondary">Exportar PDF</button>
+          </div>
+
           <h3>Registros de asistencia</h3>
           <table>
             <thead>
@@ -57,9 +75,6 @@
                 <th>Sede</th>
                 <th>Tipo</th>
                 <th>Hora</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Dispositivo</th>
                 <th>Estado</th>
               </tr>
             </thead>

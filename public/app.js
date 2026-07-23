@@ -2,8 +2,6 @@ const userForm = document.getElementById('userForm');
 const userStatus = document.getElementById('userStatus') || document.getElementById('statusBanner');
 const userDocumentInput = document.getElementById('userDocument');
 const userNameInput = document.getElementById('userName');
-const userEmailInput = document.getElementById('userEmail');
-const userPhoneInput = document.getElementById('userPhone');
 const startUserScannerBtn = document.getElementById('startUserScannerBtn');
 const userReader = document.getElementById('userReader');
 const qrBranchSelect = document.getElementById('qrBranchSelect');
@@ -14,6 +12,11 @@ const qrImage = document.getElementById('qrImage');
 const qrPayload = document.getElementById('qrPayload');
 const branchForm = document.getElementById('branchForm');
 const attendanceRows = document.getElementById('attendanceRows');
+const attendanceTypeFilter = document.getElementById('attendanceTypeFilter');
+const lateThresholdInput = document.getElementById('lateThresholdInput');
+const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+const exportExcelBtn = document.getElementById('exportExcelBtn');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
 const adminLoginForm = document.getElementById('adminLoginForm');
 const adminStatus = document.getElementById('adminStatus');
 const adminAuthPanel = document.getElementById('adminAuthPanel');
@@ -31,6 +34,9 @@ let qrDetectionActive = false;
 let scanCooldown = 0;
 let statusResetTimer = null;
 let barcodeDetector = null;
+let attendanceRecords = [];
+let activeAttendanceFilter = 'all';
+let activeLateThreshold = '08:30';
 
 function showStatusMessage(message, durationMs = 5000, options = {}) {
   if (!userStatus) {
@@ -109,30 +115,35 @@ async function loadAttendance() {
 
   const res = await fetch('/api/attendance');
   const data = await res.json();
+  attendanceRecords = data;
+  renderAttendanceRows();
+}
 
-  attendanceRows.innerHTML = data.length
-    ? data
+function renderAttendanceRows() {
+  if (!attendanceRows) {
+    return;
+  }
+
+  const filteredRecords = attendanceRecords.filter((row) => {
+    const matchesType = activeAttendanceFilter === 'all' || (row.attendanceType || 'entrada') === activeAttendanceFilter;
+    const timeValue = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
+    const matchesLate = !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
+    return matchesType && matchesLate;
+  });
+
+  attendanceRows.innerHTML = filteredRecords.length
+    ? filteredRecords
         .map((row) => {
           const verified = row.verified === 1 || row.verified === true;
-          let deviceLabel = '-';
-          if (row.deviceInfo) {
-            try {
-              const info = JSON.parse(row.deviceInfo);
-              deviceLabel = info.platform || info.browser || '-';
-            } catch (error) {
-              deviceLabel = '-';
-            }
-          }
-
+          const scannedTime = row.scannedAt ? new Date(row.scannedAt).toLocaleTimeString('es-ES') : '-';
+          const isLate = activeLateThreshold && row.attendanceType === 'entrada' && row.scannedAt && new Date(row.scannedAt).toTimeString().slice(0, 5) > activeLateThreshold;
+          const rowClass = isLate ? 'late-row' : '';
           return `
-            <tr>
+            <tr class="${rowClass}">
               <td>${row.employeeName}</td>
               <td>${row.branchName || row.branchId}</td>
               <td>${row.attendanceType || 'entrada'}</td>
-              <td>${new Date(row.scannedAt).toLocaleTimeString('es-ES')}</td>
-              <td>${row.employeeEmail || '-'}</td>
-              <td>${row.employeePhone || '-'}</td>
-              <td>${deviceLabel}</td>
+              <td>${scannedTime}</td>
               <td>
                 <button class="verify-btn" data-id="${row.id}" data-verified="${verified ? 'true' : 'false'}">
                   ${verified ? 'Quitar verificación' : 'Verificar'}
@@ -142,7 +153,87 @@ async function loadAttendance() {
           `;
         })
         .join('')
-    : '<tr><td colspan="8">No hay registros aún</td></tr>';
+    : '<tr><td colspan="5">No hay registros aún</td></tr>';
+}
+
+function applyAttendanceFilters() {
+  activeAttendanceFilter = attendanceTypeFilter?.value || 'all';
+  activeLateThreshold = lateThresholdInput?.value || '08:30';
+  renderAttendanceRows();
+}
+
+function exportAttendance(format) {
+  if (!attendanceRecords.length) {
+    return;
+  }
+
+  const rows = attendanceRecords
+    .filter((row) => {
+      const matchesType = activeAttendanceFilter === 'all' || (row.attendanceType || 'entrada') === activeAttendanceFilter;
+      const timeValue = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
+      const matchesLate = !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
+      return matchesType && matchesLate;
+    })
+    .map((row) => ({
+      Trabajador: row.employeeName,
+      Sede: row.branchName || row.branchId,
+      Tipo: row.attendanceType || 'entrada',
+      Hora: new Date(row.scannedAt).toLocaleTimeString('es-ES'),
+      Estado: row.verified ? 'Verificado' : 'Pendiente',
+    }));
+
+  if (format === 'excel') {
+    const csv = [
+      ['Trabajador', 'Sede', 'Tipo', 'Hora', 'Estado'],
+      ...rows.map((row) => [row.Trabajador, row.Sede, row.Tipo, row.Hora, row.Estado]),
+    ]
+      .map((line) => line.join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'asistencia.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  if (format === 'pdf') {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head><title>Reporte de asistencia</title></head>
+        <body>
+          <h2>Reporte de asistencia</h2>
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="border:1px solid #999; padding:6px;">Trabajador</th>
+                <th style="border:1px solid #999; padding:6px;">Sede</th>
+                <th style="border:1px solid #999; padding:6px;">Tipo</th>
+                <th style="border:1px solid #999; padding:6px;">Hora</th>
+                <th style="border:1px solid #999; padding:6px;">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((row) => `
+                <tr>
+                  <td style="border:1px solid #999; padding:6px;">${row.Trabajador}</td>
+                  <td style="border:1px solid #999; padding:6px;">${row.Sede}</td>
+                  <td style="border:1px solid #999; padding:6px;">${row.Tipo}</td>
+                  <td style="border:1px solid #999; padding:6px;">${row.Hora}</td>
+                  <td style="border:1px solid #999; padding:6px;">${row.Estado}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+  }
 }
 
 async function generateQr() {
@@ -185,8 +276,6 @@ if (userForm) {
     currentUser = {
       document: userDocumentInput?.value.trim() || '',
       name: userNameInput?.value.trim() || '',
-      email: userEmailInput?.value.trim() || '',
-      phone: userPhoneInput?.value.trim() || '',
     };
 
     if (!currentUser.document || !currentUser.name) {
@@ -298,8 +387,6 @@ async function openCameraScanner() {
             token,
             employeeId: currentUser.document,
             employeeName: currentUser.name,
-            employeeEmail: currentUser.email,
-            employeePhone: currentUser.phone,
           }),
         });
         const dataRes = await res.json();
@@ -420,6 +507,16 @@ if (branchForm) {
   });
 }
 
+if (applyFiltersBtn) {
+  applyFiltersBtn.addEventListener('click', applyAttendanceFilters);
+}
+if (exportExcelBtn) {
+  exportExcelBtn.addEventListener('click', () => exportAttendance('excel'));
+}
+if (exportPdfBtn) {
+  exportPdfBtn.addEventListener('click', () => exportAttendance('pdf'));
+}
+
 if (attendanceRows) {
   attendanceRows.addEventListener('click', async (event) => {
     const btn = event.target.closest('.verify-btn');
@@ -447,8 +544,6 @@ async function initializeSession() {
     currentUser = JSON.parse(savedUser);
     if (userDocumentInput) userDocumentInput.value = currentUser.document || '';
     if (userNameInput) userNameInput.value = currentUser.name || '';
-    if (userEmailInput) userEmailInput.value = currentUser.email || '';
-    if (userPhoneInput) userPhoneInput.value = currentUser.phone || '';
     if (userStatus) {
       userStatus.textContent = `Sesión restaurada para ${currentUser.name}`;
     }
