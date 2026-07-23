@@ -195,7 +195,7 @@ function renderAttendanceRows() {
           `;
         })
         .join('')
-    : '<tr><td colspan="6">No hay registros aún</td></tr>';
+    : '<tr><td colspan="7">No hay registros aún</td></tr>';
 }
 
 function applyAttendanceFilters() {
@@ -383,6 +383,9 @@ async function openCameraScanner() {
     }
 
     await userReader.play().catch(() => {});
+    if (startUserScannerBtn) {
+      startUserScannerBtn.textContent = 'Cámara activa';
+    }
     showStatusMessage('Cámara lista. Enfoca el QR dentro del marco y muévelo lentamente.', 5000);
     qrDetectionActive = true;
     scanCooldown = 0;

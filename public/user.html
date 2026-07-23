@@ -15,25 +15,37 @@
         <a href="/admin.html" data-module="admin">Admin</a>
       </nav>
 
-      <section class="panel">
-        <h1>Usuario</h1>
-        <p>Ingresa tus datos, abre la cámara y escanea el QR para registrar tu asistencia.</p>
-        <form id="userForm" class="grid compact">
-          <label>
-            CC
-            <input id="userDocument" required placeholder="Ej. 1020304050" />
-          </label>
-          <label>
-            Nombre completo
-            <input id="userName" required placeholder="Ej. Laura Martínez" />
-          </label>
-          <button type="submit">Listo para escanear</button>
-        </form>
-        <div id="statusBanner" class="status-banner">Ingresa tus datos para continuar.</div>
-        <button id="startUserScannerBtn" class="secondary">Abrir cámara</button>
-        <div class="reader-wrapper">
-          <div class="reader-frame"></div>
-          <video id="userReader" class="reader" autoplay playsinline muted></video>
+      <section class="panel panel-spotlight">
+        <div class="scan-layout">
+          <div class="scan-copy">
+            <span class="section-tag">Registro rápido</span>
+            <h1>Usuario</h1>
+            <p>Ingresa tus datos, abre la cámara y centra el QR dentro del marco para registrar tu asistencia.</p>
+            <form id="userForm" class="grid compact">
+              <label>
+                CC
+                <input id="userDocument" required placeholder="Ej. 1020304050" />
+              </label>
+              <label>
+                Nombre completo
+                <input id="userName" required placeholder="Ej. Laura Martínez" />
+              </label>
+              <button type="submit">Listo para escanear</button>
+            </form>
+            <div id="statusBanner" class="status-banner">Ingresa tus datos para continuar.</div>
+            <button id="startUserScannerBtn" class="secondary">Abrir cámara</button>
+          </div>
+
+          <div class="scan-stage">
+            <div class="stage-card">
+              <p class="stage-label">Escaneo en vivo</p>
+              <div class="reader-wrapper">
+                <div class="reader-frame"></div>
+                <video id="userReader" class="reader" autoplay playsinline muted></video>
+              </div>
+              <p class="scanner-hint">Mantén el QR centrado y a una distancia corta para que el lector lo detecte más rápido.</p>
+            </div>
+          </div>
         </div>
       </section>
     </main>

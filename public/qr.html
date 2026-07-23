@@ -15,27 +15,33 @@
         <a href="/admin.html" data-module="admin">Admin</a>
       </nav>
 
-      <section class="panel">
-        <h1>Módulo QR</h1>
-        <div class="grid compact">
-          <label>
-            Sede
-            <select id="qrBranchSelect" required></select>
-          </label>
-          <label>
-            Tipo
-            <select id="qrTypeSelect">
-              <option value="entrada">Entrada</option>
-              <option value="salida">Salida</option>
-            </select>
-          </label>
-          <button id="generateQrBtn" type="button">Generar QR</button>
-        </div>
+      <section class="panel panel-spotlight">
+        <div class="qr-stage-layout">
+          <div>
+            <span class="section-tag">Punto de control</span>
+            <h1>Módulo QR</h1>
+            <p>Genera un código visible, centrado y listo para que el usuario lo escanee con rapidez.</p>
+            <div class="grid compact">
+              <label>
+                Sede
+                <select id="qrBranchSelect" required></select>
+              </label>
+              <label>
+                Tipo
+                <select id="qrTypeSelect">
+                  <option value="entrada">Entrada</option>
+                  <option value="salida">Salida</option>
+                </select>
+              </label>
+              <button id="generateQrBtn" type="button">Generar QR</button>
+            </div>
+          </div>
 
-        <div id="qrResult" class="qr-card hidden">
-          <h3>QR activo</h3>
-          <img id="qrImage" alt="QR de asistencia" />
-          <p id="qrPayload"></p>
+          <div id="qrResult" class="qr-card hidden">
+            <p class="stage-label">QR activo</p>
+            <img id="qrImage" alt="QR de asistencia" />
+            <p id="qrPayload"></p>
+          </div>
         </div>
       </section>
     </main>
