@@ -1,3 +1,5 @@
+const roleSelect = document.getElementById('roleSelect');
+const rolePanels = document.querySelectorAll('.role-panel');
 const userForm = document.getElementById('userForm');
 const userStatus = document.getElementById('userStatus') || document.getElementById('statusBanner');
 const userDocumentInput = document.getElementById('userDocument');
@@ -37,6 +39,12 @@ let qrDetectionActive = false;
 let scanCooldown = 0;
 let statusResetTimer = null;
 let barcodeDetector = null;
+
+function switchRole(role) {
+  rolePanels.forEach((panel) => {
+    panel.classList.toggle('hidden', panel.id !== `${role}Panel`);
+  });
+}
 
 function showStatusMessage(message, durationMs = 5000, options = {}) {
   userStatus.textContent = message;
@@ -333,6 +341,9 @@ if (qrBranchSelect) {
 if (qrTypeSelect) {
   qrTypeSelect.addEventListener('change', generateQr);
 }
+if (roleSelect) {
+  roleSelect.addEventListener('change', (event) => switchRole(event.target.value));
+}
 
 if (adminLoginForm) {
   adminLoginForm.addEventListener('submit', async (event) => {
@@ -459,3 +470,4 @@ if (generateQrBtn) {
   startQrRotation();
 }
 initializeSession();
+switchRole(roleSelect?.value || 'user');

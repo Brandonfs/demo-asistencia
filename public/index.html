@@ -24,7 +24,7 @@
 
       <section id="userPanel" class="panel role-panel">
         <h2>Usuario</h2>
-        <p>Solo ingresa tu CC y nombre. Luego abre la cámara y escanea el QR para registrar tu asistencia.</p>
+        <p>Ingresa tus datos, abre la cámara y escanea el QR para registrar tu asistencia.</p>
         <form id="userForm" class="grid compact">
           <label>
             CC
@@ -34,10 +34,26 @@
             Nombre completo
             <input id="userName" required placeholder="Ej. Laura Martínez" />
           </label>
+          <label>
+            Correo
+            <input id="userEmail" type="email" placeholder="Ej. laura@empresa.com" />
+          </label>
+          <label>
+            Teléfono
+            <input id="userPhone" placeholder="Ej. 3001234567" />
+          </label>
           <button type="submit">Listo para escanear</button>
         </form>
-        <p id="userStatus" class="status">Ingresa tus datos para continuar.</p>
+        <div id="statusBanner" class="status-banner">Ingresa tus datos para continuar.</div>
         <button id="startUserScannerBtn" class="secondary">Abrir cámara</button>
+        <div id="scanSummary" class="summary-card hidden">
+          <h3>Registro capturado</h3>
+          <p><strong>Nombre:</strong> <span id="summaryName">-</span></p>
+          <p><strong>CC:</strong> <span id="summaryDocument">-</span></p>
+          <p><strong>Correo:</strong> <span id="summaryEmail">-</span></p>
+          <p><strong>Teléfono:</strong> <span id="summaryPhone">-</span></p>
+          <p><strong>Estado:</strong> <span id="summaryStatus">-</span></p>
+        </div>
         <div class="reader-wrapper">
           <div class="reader-frame"></div>
           <video id="userReader" class="reader" autoplay playsinline muted></video>
@@ -110,6 +126,9 @@
                 <th>Sede</th>
                 <th>Tipo</th>
                 <th>Hora</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Dispositivo</th>
                 <th>Estado</th>
               </tr>
             </thead>
