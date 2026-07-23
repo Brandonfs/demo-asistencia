@@ -14,19 +14,29 @@
       </section>
 
       <section class="panel landing-grid">
-        <a class="landing-card" href="/user.html">
+        <a class="landing-card" href="/user.html" data-module="user">
           <h2>Usuario</h2>
           <p>Registro del empleado, cámara y escaneo del QR.</p>
         </a>
-        <a class="landing-card" href="/qr.html">
+        <a class="landing-card" href="/qr.html" data-module="qr">
           <h2>QR</h2>
           <p>Generación del código QR por sede y tipo de registro.</p>
         </a>
-        <a class="landing-card" href="/admin.html">
+        <a class="landing-card" href="/admin.html" data-module="admin">
           <h2>Admin</h2>
           <p>Gestión de sedes y revisión de registros.</p>
         </a>
       </section>
     </main>
+    <script>
+      document.querySelectorAll('.landing-card').forEach((card) => {
+        card.addEventListener('click', (event) => {
+          event.preventDefault();
+          const module = card.getAttribute('data-module');
+          localStorage.setItem('activeModule', module);
+          window.location.href = card.getAttribute('href');
+        });
+      });
+    </script>
   </body>
 </html>

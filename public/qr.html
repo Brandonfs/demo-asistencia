@@ -9,10 +9,10 @@
   <body>
     <main class="container">
       <nav class="top-nav">
-        <a href="/">Inicio</a>
-        <a href="/user.html">Usuario</a>
-        <a href="/qr.html" class="active">QR</a>
-        <a href="/admin.html">Admin</a>
+        <a href="/" data-module="home">Inicio</a>
+        <a href="/user.html" data-module="user">Usuario</a>
+        <a href="/qr.html" class="active" data-module="qr">QR</a>
+        <a href="/admin.html" data-module="admin">Admin</a>
       </nav>
 
       <section class="panel">
@@ -41,5 +41,15 @@
     </main>
 
     <script src="/app.js"></script>
+    <script>
+      document.querySelectorAll('.top-nav a').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          const module = link.getAttribute('data-module');
+          localStorage.setItem('activeModule', module);
+          window.location.href = link.getAttribute('href');
+        });
+      });
+    </script>
   </body>
 </html>

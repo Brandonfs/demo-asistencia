@@ -9,10 +9,10 @@
   <body>
     <main class="container">
       <nav class="top-nav">
-        <a href="/">Inicio</a>
-        <a href="/user.html" class="active">Usuario</a>
-        <a href="/qr.html">QR</a>
-        <a href="/admin.html">Admin</a>
+        <a href="/" data-module="home">Inicio</a>
+        <a href="/user.html" class="active" data-module="user">Usuario</a>
+        <a href="/qr.html" data-module="qr">QR</a>
+        <a href="/admin.html" data-module="admin">Admin</a>
       </nav>
 
       <section class="panel">
@@ -27,6 +27,14 @@
             Nombre completo
             <input id="userName" required placeholder="Ej. Laura Martínez" />
           </label>
+          <label>
+            Correo
+            <input id="userEmail" type="email" placeholder="Ej. laura@empresa.com" />
+          </label>
+          <label>
+            Teléfono
+            <input id="userPhone" placeholder="Ej. 3001234567" />
+          </label>
           <button type="submit">Listo para escanear</button>
         </form>
         <div id="statusBanner" class="status-banner">Ingresa tus datos para continuar.</div>
@@ -39,5 +47,15 @@
     </main>
 
     <script src="/app.js"></script>
+    <script>
+      document.querySelectorAll('.top-nav a').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          const module = link.getAttribute('data-module');
+          localStorage.setItem('activeModule', module);
+          window.location.href = link.getAttribute('href');
+        });
+      });
+    </script>
   </body>
 </html>
