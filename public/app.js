@@ -24,6 +24,10 @@ let qrTimer = null;
 let authToken = null;
 let streamActive = false;
 let mediaStream = null;
+let qrScanTimer = null;
+let lastScanValue = null;
+let qrDetectionActive = false;
+let scanCooldown = 0;
 
 function switchRole(role) {
   rolePanels.forEach((panel) => {
@@ -151,7 +155,64 @@ async function openCameraScanner() {
     userReader.srcObject = mediaStream;
     userReader.playsInline = true;
     userReader.autoplay = true;
-    userStatus.textContent = 'Cámara lista. A continuación, usa el QR desde el dispositivo.';
+    userStatus.textContent = 'Cámara lista. Enfoca el QR para registrar la asistencia.';
+    qrDetectionActive = true;
+    scanCooldown = 0;
+
+    if (qrScanTimer) {
+      clearInterval(qrScanTimer);
+    }
+
+    qrScanTimer = setInterval(async () => {
+      if (!qrDetectionActive || !userReader.videoWidth || !userReader.videoHeight) {
+        return;
+      }
+
+      try {
+        if (scanCooldown > 0) {
+          scanCooldown -= 500;
+          return;
+        }
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = userReader.videoWidth;
+        canvas.height = userReader.videoHeight;
+        context.drawImage(userReader, 0, 0, canvas.width, canvas.height);
+
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, canvas.width, canvas.height);
+        if (!code) {
+          return;
+        }
+
+        const token = new URL(code.data).searchParams.get('token');
+        if (!token || token === lastScanValue) {
+          return;
+        }
+        lastScanValue = token;
+        scanCooldown = 3000;
+        userStatus.textContent = 'QR detectado. Registrando asistencia...';
+
+        const res = await fetch('/api/attendance/scan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            employeeId: currentUser.document,
+            employeeName: currentUser.name,
+          }),
+        });
+        const dataRes = await res.json();
+        userStatus.textContent = dataRes.message || dataRes.error || 'Asistencia registrada.';
+        if (res.ok) {
+          loadAttendance();
+          qrDetectionActive = false;
+        }
+      } catch (error) {
+        userStatus.textContent = 'No se pudo leer el QR. Intenta acercar el código.';
+      }
+    }, 500);
   } catch (error) {
     const message = error?.message || 'No se pudo abrir la cámara.';
     if (/Permission|denied|NotAllowed/i.test(message)) {
