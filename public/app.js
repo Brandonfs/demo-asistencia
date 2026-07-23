@@ -1,5 +1,9 @@
 const userForm = document.getElementById('userForm');
 const userStatus = document.getElementById('userStatus') || document.getElementById('statusBanner');
+const userDocumentInput = document.getElementById('userDocument');
+const userNameInput = document.getElementById('userName');
+const userEmailInput = document.getElementById('userEmail');
+const userPhoneInput = document.getElementById('userPhone');
 const startUserScannerBtn = document.getElementById('startUserScannerBtn');
 const userReader = document.getElementById('userReader');
 const qrBranchSelect = document.getElementById('qrBranchSelect');
@@ -100,6 +104,9 @@ async function loadAttendance() {
               <td>${row.branchName || row.branchId}</td>
               <td>${row.attendanceType || 'entrada'}</td>
               <td>${new Date(row.scannedAt).toLocaleTimeString('es-ES')}</td>
+              <td>${row.employeeEmail || '-'}</td>
+              <td>${row.employeePhone || '-'}</td>
+              <td>${row.deviceInfo ? JSON.parse(row.deviceInfo).platform || JSON.parse(row.deviceInfo).browser || '-' : '-'}</td>
               <td>
                 <button class="verify-btn" data-id="${row.id}" data-verified="${verified ? 'true' : 'false'}">
                   ${verified ? 'Quitar verificación' : 'Verificar'}
@@ -149,8 +156,10 @@ function startQrRotation() {
 userForm.addEventListener('submit', (event) => {
   event.preventDefault();
   currentUser = {
-    document: document.getElementById('userDocument').value.trim(),
-    name: document.getElementById('userName').value.trim(),
+    document: userDocumentInput.value.trim(),
+    name: userNameInput.value.trim(),
+    email: userEmailInput?.value.trim() || '',
+    phone: userPhoneInput?.value.trim() || '',
   };
 
   if (!currentUser.document || !currentUser.name) {
@@ -257,6 +266,8 @@ async function openCameraScanner() {
             token,
             employeeId: currentUser.document,
             employeeName: currentUser.name,
+            employeeEmail: currentUser.email,
+            employeePhone: currentUser.phone,
           }),
         });
         const dataRes = await res.json();
@@ -394,8 +405,10 @@ async function initializeSession() {
   const savedUser = localStorage.getItem('attendanceUser');
   if (savedUser) {
     currentUser = JSON.parse(savedUser);
-    document.getElementById('userDocument').value = currentUser.document || '';
-    document.getElementById('userName').value = currentUser.name || '';
+    userDocumentInput.value = currentUser.document || '';
+    userNameInput.value = currentUser.name || '';
+    if (userEmailInput) userEmailInput.value = currentUser.email || '';
+    if (userPhoneInput) userPhoneInput.value = currentUser.phone || '';
     userStatus.textContent = `Sesión restaurada para ${currentUser.name}`;
   }
 
