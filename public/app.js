@@ -6,6 +6,12 @@ const userEmailInput = document.getElementById('userEmail');
 const userPhoneInput = document.getElementById('userPhone');
 const startUserScannerBtn = document.getElementById('startUserScannerBtn');
 const userReader = document.getElementById('userReader');
+const scanSummary = document.getElementById('scanSummary');
+const summaryName = document.getElementById('summaryName');
+const summaryDocument = document.getElementById('summaryDocument');
+const summaryEmail = document.getElementById('summaryEmail');
+const summaryPhone = document.getElementById('summaryPhone');
+const summaryStatus = document.getElementById('summaryStatus');
 const qrBranchSelect = document.getElementById('qrBranchSelect');
 const qrTypeSelect = document.getElementById('qrTypeSelect');
 const generateQrBtn = document.getElementById('generateQrBtn');
@@ -34,6 +40,9 @@ let barcodeDetector = null;
 
 function showStatusMessage(message, durationMs = 5000, options = {}) {
   userStatus.textContent = message;
+  if (scanSummary) {
+    summaryStatus.textContent = message;
+  }
   if (statusResetTimer) {
     clearTimeout(statusResetTimer);
   }
@@ -282,10 +291,19 @@ async function openCameraScanner() {
           return;
         }
 
-        showStatusMessage(dataRes.message || 'Asistencia registrada.', 5000);
+        const successMessage = dataRes.message || 'Asistencia registrada.';
+        if (scanSummary) {
+          scanSummary.classList.remove('hidden');
+          summaryName.textContent = currentUser.name || '-';
+          summaryDocument.textContent = currentUser.document || '-';
+          summaryEmail.textContent = currentUser.email || '-';
+          summaryPhone.textContent = currentUser.phone || '-';
+          summaryStatus.textContent = successMessage;
+        }
+        showStatusMessage(successMessage, 5000);
         loadAttendance();
         qrDetectionActive = false;
-        stopCameraScanner(dataRes.message || 'Asistencia registrada.', 5000);
+        stopCameraScanner(successMessage, 5000);
       } catch (error) {
         showStatusMessage('Mueve el teléfono lentamente y centra el QR dentro del marco.', 2000);
       }
