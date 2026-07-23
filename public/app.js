@@ -19,10 +19,11 @@ const adminAuthPanel = document.getElementById('adminAuthPanel');
 const adminTools = document.getElementById('adminTools');
 const logoutAdminBtn = document.getElementById('logoutAdminBtn');
 
-let html5QrCode;
 let currentUser = null;
 let qrTimer = null;
 let authToken = null;
+let streamActive = false;
+let mediaStream = null;
 
 function switchRole(role) {
   rolePanels.forEach((panel) => {
@@ -136,55 +137,25 @@ async function openCameraScanner() {
     return;
   }
 
-  if (!window.Html5Qrcode) {
-    userStatus.textContent = 'No se pudo cargar el escáner de cámara. Intenta recargar la página.';
-    return;
-  }
-
   try {
-    const cameras = await Html5Qrcode.getCameras();
-    if (!cameras?.length) {
-      userStatus.textContent = 'No se encontró una cámara disponible en este dispositivo.';
-      return;
+    if (streamActive && mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
     }
 
-    const rearCamera = cameras.find((camera) => /back|rear|environment/i.test(camera.label)) || cameras[0];
-    const cameraId = rearCamera?.id || { facingMode: 'environment' };
-
-    html5QrCode = new Html5Qrcode('userReader');
-    const config = { fps: 10, qrbox: { width: 220, height: 220 } };
-
-    userStatus.textContent = 'Abriendo cámara... apunta al QR.';
-
-    await html5QrCode.start(cameraId, config, async (decodedText) => {
-      const token = new URL(decodedText).searchParams.get('token');
-      if (!token) {
-        userStatus.textContent = 'El QR no contiene un token válido.';
-        return;
-      }
-
-      const res = await fetch('/api/attendance/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token,
-          employeeId: currentUser.document,
-          employeeName: currentUser.name,
-        }),
-      });
-      const data = await res.json();
-      userStatus.textContent = data.message || data.error || 'Asistencia registrada.';
-      await html5QrCode.stop();
-      if (res.ok) {
-        loadAttendance();
-      }
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false,
     });
+
+    streamActive = true;
+    userReader.srcObject = mediaStream;
+    userReader.playsInline = true;
+    userReader.autoplay = true;
+    userStatus.textContent = 'Cámara lista. A continuación, usa el QR desde el dispositivo.';
   } catch (error) {
     const message = error?.message || 'No se pudo abrir la cámara.';
     if (/Permission|denied|NotAllowed/i.test(message)) {
       userStatus.textContent = 'Se denegó el acceso a la cámara. Activa los permisos y vuelve a intentarlo.';
-    } else if (/NotFound|No camera|devices/i.test(message)) {
-      userStatus.textContent = 'No se encontró una cámara disponible en este dispositivo.';
     } else {
       userStatus.textContent = `No se pudo abrir la cámara: ${message}`;
     }
