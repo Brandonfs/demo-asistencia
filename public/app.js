@@ -14,6 +14,7 @@ const branchForm = document.getElementById('branchForm');
 const attendanceRows = document.getElementById('attendanceRows');
 const attendanceTypeFilter = document.getElementById('attendanceTypeFilter');
 const lateThresholdInput = document.getElementById('lateThresholdInput');
+const lateThresholdEnabled = document.getElementById('lateThresholdEnabled');
 const applyFiltersBtn = document.getElementById('applyFiltersBtn');
 const exportExcelBtn = document.getElementById('exportExcelBtn');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
@@ -37,6 +38,11 @@ let barcodeDetector = null;
 let attendanceRecords = [];
 let activeAttendanceFilter = 'all';
 let activeLateThreshold = '08:30';
+let isLateThresholdActive = true;
+
+function getEffectiveLateThreshold() {
+  return isLateThresholdActive ? activeLateThreshold : '';
+}
 
 function showStatusMessage(message, durationMs = 5000, options = {}) {
   if (!userStatus) {
@@ -134,12 +140,13 @@ function formatAttendanceDate(row) {
 }
 
 function getLateAccumulations(row) {
-  if (!activeLateThreshold || (row.attendanceType || 'entrada') !== 'entrada') {
+  const effectiveLateThreshold = getEffectiveLateThreshold();
+  if (!effectiveLateThreshold || (row.attendanceType || 'entrada') !== 'entrada') {
     return 0;
   }
 
   const rowTime = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
-  if (!rowTime || rowTime <= activeLateThreshold) {
+  if (!rowTime || rowTime <= effectiveLateThreshold) {
     return 0;
   }
 
@@ -149,7 +156,7 @@ function getLateAccumulations(row) {
     }
 
     const itemTime = item.scannedAt ? new Date(item.scannedAt).toTimeString().slice(0, 5) : null;
-    return itemTime && itemTime > activeLateThreshold;
+    return itemTime && itemTime > effectiveLateThreshold;
   }).length;
 }
 
@@ -158,11 +165,13 @@ function renderAttendanceRows() {
     return;
   }
 
+  const effectiveLateThreshold = getEffectiveLateThreshold();
+
   const filteredRecords = attendanceRecords.filter((row) => {
     const matchesType = activeAttendanceFilter === 'all' || (row.attendanceType || 'entrada') === activeAttendanceFilter;
     const timeValue = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
     const isEntry = (row.attendanceType || 'entrada') === 'entrada';
-    const matchesLate = activeAttendanceFilter === 'salida' || !isEntry || !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
+    const matchesLate = activeAttendanceFilter === 'salida' || !isEntry || !effectiveLateThreshold || !timeValue || timeValue > effectiveLateThreshold;
     return matchesType && matchesLate;
   });
 
@@ -171,7 +180,7 @@ function renderAttendanceRows() {
         .map((row) => {
           const verified = row.verified === 1 || row.verified === true;
           const scannedTime = row.scannedAt ? new Date(row.scannedAt).toLocaleTimeString('es-ES') : '-';
-          const isLate = activeLateThreshold && row.attendanceType === 'entrada' && row.scannedAt && new Date(row.scannedAt).toTimeString().slice(0, 5) > activeLateThreshold;
+          const isLate = effectiveLateThreshold && row.attendanceType === 'entrada' && row.scannedAt && new Date(row.scannedAt).toTimeString().slice(0, 5) > effectiveLateThreshold;
           const lateAccumulations = isLate ? getLateAccumulations(row) : 0;
           const detailText = isLate ? `Tardanzas acumuladas: ${lateAccumulations}` : verified ? 'Verificado' : 'Pendiente';
           const rowClass = isLate ? 'late-row' : '';
@@ -201,6 +210,10 @@ function renderAttendanceRows() {
 function applyAttendanceFilters() {
   activeAttendanceFilter = attendanceTypeFilter?.value || 'all';
   activeLateThreshold = lateThresholdInput?.value || '08:30';
+  isLateThresholdActive = (lateThresholdEnabled?.value || 'on') === 'on';
+  if (lateThresholdInput) {
+    lateThresholdInput.disabled = !isLateThresholdActive;
+  }
   renderAttendanceRows();
 }
 
@@ -209,16 +222,18 @@ function exportAttendance(format) {
     return;
   }
 
+  const effectiveLateThreshold = getEffectiveLateThreshold();
+
   const rows = attendanceRecords
     .filter((row) => {
       const matchesType = activeAttendanceFilter === 'all' || (row.attendanceType || 'entrada') === activeAttendanceFilter;
       const timeValue = row.scannedAt ? new Date(row.scannedAt).toTimeString().slice(0, 5) : null;
       const isEntry = (row.attendanceType || 'entrada') === 'entrada';
-      const matchesLate = activeAttendanceFilter === 'salida' || !isEntry || !activeLateThreshold || !timeValue || timeValue > activeLateThreshold;
+      const matchesLate = activeAttendanceFilter === 'salida' || !isEntry || !effectiveLateThreshold || !timeValue || timeValue > effectiveLateThreshold;
       return matchesType && matchesLate;
     })
     .map((row) => {
-      const isLate = activeLateThreshold && (row.attendanceType || 'entrada') === 'entrada' && row.scannedAt && new Date(row.scannedAt).toTimeString().slice(0, 5) > activeLateThreshold;
+      const isLate = effectiveLateThreshold && (row.attendanceType || 'entrada') === 'entrada' && row.scannedAt && new Date(row.scannedAt).toTimeString().slice(0, 5) > effectiveLateThreshold;
       const lateAccumulations = isLate ? getLateAccumulations(row) : 0;
       const detalle = isLate ? `Tardanzas acumuladas: ${lateAccumulations}` : row.verified ? 'Verificado' : 'Pendiente';
       return {
@@ -309,7 +324,7 @@ async function generateQr() {
   }
 
   qrImage.src = data.image;
-  qrPayload.textContent = `Sede: ${qrBranchSelect.options[qrBranchSelect.selectedIndex]?.text || 'Sede'} · Tipo: ${qrTypeSelect.value} · Se actualiza cada 10 segundos`;
+  qrPayload.textContent = `Sede: ${qrBranchSelect.options[qrBranchSelect.selectedIndex]?.text || 'Sede'} · Tipo: ${qrTypeSelect.value} · Se actualiza cada 3 segundos`;
   qrResult.classList.remove('hidden');
 }
 
@@ -319,9 +334,9 @@ function startQrRotation() {
   qrTimer = setInterval(() => {
     generateQr();
     if (qrPayload) {
-      qrPayload.textContent = `Sede: ${qrBranchSelect.options[qrBranchSelect.selectedIndex]?.text || 'Sede'} · Tipo: ${qrTypeSelect.value} · Se actualiza cada 10 segundos`;
+      qrPayload.textContent = `Sede: ${qrBranchSelect.options[qrBranchSelect.selectedIndex]?.text || 'Sede'} · Tipo: ${qrTypeSelect.value} · Se actualiza cada 3 segundos`;
     }
-  }, 10000);
+  }, 3000);
 }
 
 if (userForm) {
@@ -566,6 +581,9 @@ if (branchForm) {
 
 if (applyFiltersBtn) {
   applyFiltersBtn.addEventListener('click', applyAttendanceFilters);
+}
+if (lateThresholdEnabled) {
+  lateThresholdEnabled.addEventListener('change', applyAttendanceFilters);
 }
 if (exportExcelBtn) {
   exportExcelBtn.addEventListener('click', () => exportAttendance('excel'));
