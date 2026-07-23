@@ -37,18 +37,41 @@ function switchRole(role) {
   });
 }
 
-function showStatusMessage(message, durationMs = 5000) {
+function showStatusMessage(message, durationMs = 5000, options = {}) {
   userStatus.textContent = message;
   if (statusResetTimer) {
     clearTimeout(statusResetTimer);
   }
-  statusResetTimer = setTimeout(() => {
-    if (currentUser?.name) {
-      userStatus.textContent = `Listo para registrar asistencia: ${currentUser.name}`;
-    } else {
-      userStatus.textContent = 'Ingresa tus datos para continuar.';
-    }
-  }, durationMs);
+  if (!options.persistent) {
+    statusResetTimer = setTimeout(() => {
+      if (currentUser?.name) {
+        userStatus.textContent = `Listo para registrar asistencia: ${currentUser.name}`;
+      } else {
+        userStatus.textContent = 'Ingresa tus datos para continuar.';
+      }
+    }, durationMs);
+  }
+}
+
+function stopCameraScanner(message, durationMs = 8000, persistent = false) {
+  qrDetectionActive = false;
+  lastScanValue = null;
+  if (qrScanTimer) {
+    clearInterval(qrScanTimer);
+    qrScanTimer = null;
+  }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((track) => track.stop());
+    mediaStream = null;
+  }
+  streamActive = false;
+  if (userReader) {
+    userReader.srcObject = null;
+  }
+  startUserScannerBtn.textContent = 'Abrir cámara';
+  if (message) {
+    showStatusMessage(message, durationMs, { persistent });
+  }
 }
 
 function stopQrTimer() {
@@ -244,11 +267,21 @@ async function openCameraScanner() {
           }),
         });
         const dataRes = await res.json();
-        showStatusMessage(dataRes.message || dataRes.error || 'Asistencia registrada.', 5000);
-        if (res.ok) {
-          loadAttendance();
-          qrDetectionActive = false;
+
+        if (!res.ok) {
+          const duplicateConflict = res.status === 409 || /ya existe|registro de este tipo|hoy/i.test(dataRes.error || '');
+          if (duplicateConflict) {
+            stopCameraScanner('Ya existe un registro de este tipo para hoy. La cámara se cerró.', 8000, true);
+            return;
+          }
+          showStatusMessage(dataRes.message || dataRes.error || 'No se pudo registrar la asistencia.', 5000);
+          return;
         }
+
+        showStatusMessage(dataRes.message || 'Asistencia registrada.', 5000);
+        loadAttendance();
+        qrDetectionActive = false;
+        stopCameraScanner(dataRes.message || 'Asistencia registrada.', 5000);
       } catch (error) {
         showStatusMessage('Mueve el teléfono lentamente y centra el QR dentro del marco.', 2000);
       }
