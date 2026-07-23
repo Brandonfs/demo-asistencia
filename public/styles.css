@@ -187,23 +187,6 @@ td {
   margin: 0.75rem 0 1rem;
 }
 
-.summary-card {
-  margin: 1rem 0 1rem;
-  padding: 1rem 1.1rem;
-  border-radius: 14px;
-  background: rgba(14, 116, 144, 0.22);
-  border: 1px solid rgba(125, 211, 252, 0.35);
-}
-
-.summary-card h3 {
-  margin-top: 0;
-  margin-bottom: 0.6rem;
-}
-
-.summary-card p {
-  margin: 0.35rem 0;
-}
-
 @media (max-width: 720px) {
   .grid.compact {
     grid-template-columns: 1fr;

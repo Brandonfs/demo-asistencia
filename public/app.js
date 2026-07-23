@@ -4,16 +4,8 @@ const userForm = document.getElementById('userForm');
 const userStatus = document.getElementById('userStatus') || document.getElementById('statusBanner');
 const userDocumentInput = document.getElementById('userDocument');
 const userNameInput = document.getElementById('userName');
-const userEmailInput = document.getElementById('userEmail');
-const userPhoneInput = document.getElementById('userPhone');
 const startUserScannerBtn = document.getElementById('startUserScannerBtn');
 const userReader = document.getElementById('userReader');
-const scanSummary = document.getElementById('scanSummary');
-const summaryName = document.getElementById('summaryName');
-const summaryDocument = document.getElementById('summaryDocument');
-const summaryEmail = document.getElementById('summaryEmail');
-const summaryPhone = document.getElementById('summaryPhone');
-const summaryStatus = document.getElementById('summaryStatus');
 const qrBranchSelect = document.getElementById('qrBranchSelect');
 const qrTypeSelect = document.getElementById('qrTypeSelect');
 const generateQrBtn = document.getElementById('generateQrBtn');
@@ -48,9 +40,6 @@ function switchRole(role) {
 
 function showStatusMessage(message, durationMs = 5000, options = {}) {
   userStatus.textContent = message;
-  if (scanSummary) {
-    summaryStatus.textContent = message;
-  }
   if (statusResetTimer) {
     clearTimeout(statusResetTimer);
   }
@@ -121,9 +110,6 @@ async function loadAttendance() {
               <td>${row.branchName || row.branchId}</td>
               <td>${row.attendanceType || 'entrada'}</td>
               <td>${new Date(row.scannedAt).toLocaleTimeString('es-ES')}</td>
-              <td>${row.employeeEmail || '-'}</td>
-              <td>${row.employeePhone || '-'}</td>
-              <td>${row.deviceInfo ? JSON.parse(row.deviceInfo).platform || JSON.parse(row.deviceInfo).browser || '-' : '-'}</td>
               <td>
                 <button class="verify-btn" data-id="${row.id}" data-verified="${verified ? 'true' : 'false'}">
                   ${verified ? 'Quitar verificación' : 'Verificar'}
@@ -175,8 +161,6 @@ userForm.addEventListener('submit', (event) => {
   currentUser = {
     document: userDocumentInput.value.trim(),
     name: userNameInput.value.trim(),
-    email: userEmailInput?.value.trim() || '',
-    phone: userPhoneInput?.value.trim() || '',
   };
 
   if (!currentUser.document || !currentUser.name) {
@@ -283,8 +267,6 @@ async function openCameraScanner() {
             token,
             employeeId: currentUser.document,
             employeeName: currentUser.name,
-            employeeEmail: currentUser.email,
-            employeePhone: currentUser.phone,
           }),
         });
         const dataRes = await res.json();
@@ -300,14 +282,6 @@ async function openCameraScanner() {
         }
 
         const successMessage = dataRes.message || 'Asistencia registrada.';
-        if (scanSummary) {
-          scanSummary.classList.remove('hidden');
-          summaryName.textContent = currentUser.name || '-';
-          summaryDocument.textContent = currentUser.document || '-';
-          summaryEmail.textContent = currentUser.email || '-';
-          summaryPhone.textContent = currentUser.phone || '-';
-          summaryStatus.textContent = successMessage;
-        }
         showStatusMessage(successMessage, 5000);
         loadAttendance();
         qrDetectionActive = false;
@@ -436,8 +410,6 @@ async function initializeSession() {
     currentUser = JSON.parse(savedUser);
     userDocumentInput.value = currentUser.document || '';
     userNameInput.value = currentUser.name || '';
-    if (userEmailInput) userEmailInput.value = currentUser.email || '';
-    if (userPhoneInput) userPhoneInput.value = currentUser.phone || '';
     userStatus.textContent = `Sesión restaurada para ${currentUser.name}`;
   }
 

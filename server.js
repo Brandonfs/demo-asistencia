@@ -239,7 +239,7 @@ app.post('/api/qr', (req, res) => {
 });
 
 app.post('/api/attendance/scan', (req, res) => {
-  const { token, employeeId, employeeName, employeeEmail, employeePhone } = req.body;
+  const { token, employeeId, employeeName } = req.body;
   if (!token || !employeeId || !employeeName) {
     return res.status(400).json({ error: 'Faltan datos para registrar la asistencia' });
   }
@@ -265,11 +265,11 @@ app.post('/api/attendance/scan', (req, res) => {
     db.run(
       `
         INSERT INTO attendance_records (
-          branchId, employeeId, employeeName, employeeEmail, employeePhone, scannedAt, scanDate, deviceInfo, source, qrToken, attendanceType, verified, createdAt
+          branchId, employeeId, employeeName, employeeEmail, scannedAt, scanDate, deviceInfo, source, qrToken, attendanceType, verified, createdAt
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'qr', ?, ?, 0, ?)
+        VALUES (?, ?, ?, '', ?, ?, ?, 'qr', ?, ?, 0, ?)
       `,
-      [session.branchId, employeeId, employeeName, employeeEmail || '', employeePhone || '', scannedAt, scanDate, deviceInfo, token, session.attendanceType || 'entrada', scannedAt],
+      [session.branchId, employeeId, employeeName, scannedAt, scanDate, deviceInfo, token, session.attendanceType || 'entrada', scannedAt],
       function (insertErr) {
         if (insertErr) {
           return res.status(500).json({ error: insertErr.message });
