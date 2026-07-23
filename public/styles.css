@@ -130,8 +130,40 @@ button:hover {
   display: block;
 }
 
-.status {
+.status,
+.status-banner {
   color: #7dd3fc;
+}
+
+.status-banner {
+  margin: 0.9rem 0 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: rgba(56, 189, 248, 0.16);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  font-weight: 700;
+}
+
+.top-nav {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.top-nav a {
+  color: #e2e8f0;
+  text-decoration: none;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.top-nav a.active {
+  background: #38bdf8;
+  color: #082f49;
+  font-weight: 700;
 }
 
 table {

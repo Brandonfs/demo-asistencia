@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin | Asistencia</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <nav class="top-nav">
+        <a href="/">Inicio</a>
+        <a href="/user.html">Usuario</a>
+        <a href="/qr.html">QR</a>
+        <a href="/admin.html" class="active">Admin</a>
+      </nav>
+
+      <section class="panel">
+        <h1>Admin</h1>
+        <div id="adminAuthPanel">
+          <form id="adminLoginForm" class="grid compact">
+            <label>
+              Usuario
+              <input id="adminUsername" required placeholder="admin" />
+            </label>
+            <label>
+              Contraseña
+              <input id="adminPassword" type="password" required placeholder="admin123" />
+            </label>
+            <button type="submit">Ingresar</button>
+          </form>
+          <p id="adminStatus" class="status">Inicia sesión con admin / admin123.</p>
+        </div>
+
+        <div id="adminTools" class="hidden">
+          <form id="branchForm" class="grid compact">
+            <label>
+              Nombre de la sede
+              <input id="branchName" required placeholder="Ej. Sede Norte" />
+            </label>
+            <label>
+              Ubicación
+              <input id="branchLocation" placeholder="Ej. Medellín" />
+            </label>
+            <button type="submit">Agregar sede</button>
+          </form>
+
+          <div class="toolbar">
+            <button id="logoutAdminBtn" class="secondary" type="button">Cerrar sesión</button>
+          </div>
+
+          <h3>Registros de asistencia</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Trabajador</th>
+                <th>Sede</th>
+                <th>Tipo</th>
+                <th>Hora</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

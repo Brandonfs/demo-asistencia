@@ -1,8 +1,5 @@
-const roleSelect = document.getElementById('roleSelect');
-const rolePanels = document.querySelectorAll('.role-panel');
-
 const userForm = document.getElementById('userForm');
-const userStatus = document.getElementById('userStatus');
+const userStatus = document.getElementById('userStatus') || document.getElementById('statusBanner');
 const startUserScannerBtn = document.getElementById('startUserScannerBtn');
 const userReader = document.getElementById('userReader');
 const qrBranchSelect = document.getElementById('qrBranchSelect');
@@ -30,12 +27,6 @@ let qrDetectionActive = false;
 let scanCooldown = 0;
 let statusResetTimer = null;
 let barcodeDetector = null;
-
-function switchRole(role) {
-  rolePanels.forEach((panel) => {
-    panel.classList.toggle('hidden', panel.id !== `${role}Panel`);
-  });
-}
 
 function showStatusMessage(message, durationMs = 5000, options = {}) {
   userStatus.textContent = message;
@@ -68,7 +59,9 @@ function stopCameraScanner(message, durationMs = 8000, persistent = false) {
   if (userReader) {
     userReader.srcObject = null;
   }
-  startUserScannerBtn.textContent = 'Abrir cámara';
+  if (startUserScannerBtn) {
+    startUserScannerBtn.textContent = 'Abrir cámara';
+  }
   if (message) {
     showStatusMessage(message, durationMs, { persistent });
   }
@@ -296,16 +289,24 @@ async function openCameraScanner() {
   }
 }
 
-startUserScannerBtn.addEventListener('click', async () => {
-  await openCameraScanner();
-});
+if (startUserScannerBtn) {
+  startUserScannerBtn.addEventListener('click', async () => {
+    await openCameraScanner();
+  });
+}
 
-generateQrBtn.addEventListener('click', generateQr);
-qrBranchSelect.addEventListener('change', generateQr);
-qrTypeSelect.addEventListener('change', generateQr);
-roleSelect.addEventListener('change', (event) => switchRole(event.target.value));
+if (generateQrBtn) {
+  generateQrBtn.addEventListener('click', generateQr);
+}
+if (qrBranchSelect) {
+  qrBranchSelect.addEventListener('change', generateQr);
+}
+if (qrTypeSelect) {
+  qrTypeSelect.addEventListener('change', generateQr);
+}
 
-adminLoginForm.addEventListener('submit', async (event) => {
+if (adminLoginForm) {
+  adminLoginForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const username = document.getElementById('adminUsername').value.trim();
   const password = document.getElementById('adminPassword').value.trim();
@@ -329,20 +330,23 @@ adminLoginForm.addEventListener('submit', async (event) => {
   await loadAttendance();
 });
 
-logoutAdminBtn.addEventListener('click', async () => {
-  if (authToken) {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${authToken}` },
-    });
-  }
-  authToken = null;
-  localStorage.removeItem('attendanceAdminToken');
-  setAdminAuthenticated(false);
-  adminStatus.textContent = 'Sesión cerrada.';
-});
+if (logoutAdminBtn) {
+  logoutAdminBtn.addEventListener('click', async () => {
+    if (authToken) {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+    }
+    authToken = null;
+    localStorage.removeItem('attendanceAdminToken');
+    setAdminAuthenticated(false);
+    adminStatus.textContent = 'Sesión cerrada.';
+  });
+}
 
-branchForm.addEventListener('submit', async (event) => {
+if (branchForm) {
+  branchForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const payload = {
     name: document.getElementById('branchName').value.trim(),
@@ -365,24 +369,26 @@ branchForm.addEventListener('submit', async (event) => {
   }
 });
 
-attendanceRows.addEventListener('click', async (event) => {
-  const btn = event.target.closest('.verify-btn');
-  if (!btn) return;
+if (attendanceRows) {
+  attendanceRows.addEventListener('click', async (event) => {
+    const btn = event.target.closest('.verify-btn');
+    if (!btn) return;
 
-  const verified = btn.dataset.verified !== 'true';
-  const res = await fetch(`/api/attendance/${btn.dataset.id}/verify`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${authToken}`,
-    },
-    body: JSON.stringify({ verified }),
+    const verified = btn.dataset.verified !== 'true';
+    const res = await fetch(`/api/attendance/${btn.dataset.id}/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ verified }),
+    });
+
+    if (res.ok) {
+      loadAttendance();
+    }
   });
-
-  if (res.ok) {
-    loadAttendance();
-  }
-});
+}
 
 async function initializeSession() {
   const savedUser = localStorage.getItem('attendanceUser');
@@ -412,8 +418,13 @@ async function initializeSession() {
   }
 }
 
-loadBranches();
-loadAttendance();
-startQrRotation();
+if (qrBranchSelect) {
+  loadBranches();
+}
+if (attendanceRows) {
+  loadAttendance();
+}
+if (generateQrBtn) {
+  startQrRotation();
+}
 initializeSession();
-switchRole(roleSelect.value);

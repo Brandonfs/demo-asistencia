@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR | Asistencia</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <nav class="top-nav">
+        <a href="/">Inicio</a>
+        <a href="/user.html">Usuario</a>
+        <a href="/qr.html" class="active">QR</a>
+        <a href="/admin.html">Admin</a>
+      </nav>
+
+      <section class="panel">
+        <h1>Módulo QR</h1>
+        <div class="grid compact">
+          <label>
+            Sede
+            <select id="qrBranchSelect" required></select>
+          </label>
+          <label>
+            Tipo
+            <select id="qrTypeSelect">
+              <option value="entrada">Entrada</option>
+              <option value="salida">Salida</option>
+            </select>
+          </label>
+          <button id="generateQrBtn" type="button">Generar QR</button>
+        </div>
+
+        <div id="qrResult" class="qr-card hidden">
+          <h3>QR activo</h3>
+          <img id="qrImage" alt="QR de asistencia" />
+          <p id="qrPayload"></p>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
