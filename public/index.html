@@ -38,7 +38,9 @@
         </form>
         <p id="userStatus" class="status">Ingresa tus datos para continuar.</p>
         <button id="startUserScannerBtn" class="secondary">Abrir cámara</button>
-        <div id="userReader" class="reader"></div>
+        <div class="reader-wrapper">
+          <video id="userReader" class="reader" autoplay playsinline muted></video>
+        </div>
       </section>
 
       <section id="qrPanel" class="panel role-panel hidden">

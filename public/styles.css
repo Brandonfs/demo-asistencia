@@ -99,9 +99,24 @@ button:hover {
   display: none;
 }
 
-.reader {
+.reader-wrapper {
   margin-top: 0.75rem;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 2px solid #38bdf8;
+  background: #020617;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 280px;
+}
+
+.reader {
+  width: 100%;
   max-width: 420px;
+  min-height: 280px;
+  background: #020617;
+  display: block;
 }
 
 .status {
