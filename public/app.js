@@ -178,6 +178,7 @@ function renderAttendanceRows() {
           return `
             <tr class="${rowClass}">
               <td>${formatAttendanceDate(row)}</td>
+              <td>${row.employeeId || '-'}</td>
               <td>${row.employeeName}</td>
               <td>${row.branchName || row.branchId}</td>
               <td>${row.attendanceType || 'entrada'}</td>
@@ -222,6 +223,7 @@ function exportAttendance(format) {
       const detalle = isLate ? `Tardanzas acumuladas: ${lateAccumulations}` : row.verified ? 'Verificado' : 'Pendiente';
       return {
         Fecha: formatAttendanceDate(row),
+        Cedula: row.employeeId || '-',
         Trabajador: row.employeeName,
         Sede: row.branchName || row.branchId,
         Tipo: row.attendanceType || 'entrada',
@@ -232,8 +234,8 @@ function exportAttendance(format) {
 
   if (format === 'excel') {
     const csv = [
-      ['Fecha', 'Trabajador', 'Sede', 'Tipo', 'Hora', 'Detalle'],
-      ...rows.map((row) => [row.Fecha, row.Trabajador, row.Sede, row.Tipo, row.Hora, row.Detalle]),
+      ['Fecha', 'Cédula', 'Trabajador', 'Sede', 'Tipo', 'Hora', 'Detalle'],
+      ...rows.map((row) => [row.Fecha, row.Cedula, row.Trabajador, row.Sede, row.Tipo, row.Hora, row.Detalle]),
     ]
       .map((line) => line.join(','))
       .join('\n');
@@ -258,6 +260,7 @@ function exportAttendance(format) {
             <thead>
               <tr>
                 <th style="border:1px solid #999; padding:6px;">Fecha</th>
+                <th style="border:1px solid #999; padding:6px;">Cédula</th>
                 <th style="border:1px solid #999; padding:6px;">Trabajador</th>
                 <th style="border:1px solid #999; padding:6px;">Sede</th>
                 <th style="border:1px solid #999; padding:6px;">Tipo</th>
@@ -269,6 +272,7 @@ function exportAttendance(format) {
               ${rows.map((row) => `
                 <tr>
                   <td style="border:1px solid #999; padding:6px;">${row.Fecha}</td>
+                  <td style="border:1px solid #999; padding:6px;">${row.Cedula}</td>
                   <td style="border:1px solid #999; padding:6px;">${row.Trabajador}</td>
                   <td style="border:1px solid #999; padding:6px;">${row.Sede}</td>
                   <td style="border:1px solid #999; padding:6px;">${row.Tipo}</td>
