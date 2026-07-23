@@ -114,14 +114,19 @@ async function generateQr() {
   }
 
   qrImage.src = data.image;
-  qrPayload.textContent = `Sede: ${qrBranchSelect.options[qrBranchSelect.selectedIndex]?.text || 'Sede'} · Tipo: ${qrTypeSelect.value}`;
+  qrPayload.textContent = `Sede: ${qrBranchSelect.options[qrBranchSelect.selectedIndex]?.text || 'Sede'} · Tipo: ${qrTypeSelect.value} · Se actualiza cada 10 segundos`;
   qrResult.classList.remove('hidden');
 }
 
 function startQrRotation() {
   stopQrTimer();
   generateQr();
-  qrTimer = setInterval(generateQr, 3000);
+  qrTimer = setInterval(() => {
+    generateQr();
+    if (qrPayload) {
+      qrPayload.textContent = `Sede: ${qrBranchSelect.options[qrBranchSelect.selectedIndex]?.text || 'Sede'} · Tipo: ${qrTypeSelect.value} · Se actualiza cada 10 segundos`;
+    }
+  }, 10000);
 }
 
 userForm.addEventListener('submit', (event) => {
@@ -170,7 +175,7 @@ async function openCameraScanner() {
     userReader.srcObject = mediaStream;
     userReader.playsInline = true;
     userReader.autoplay = true;
-    showStatusMessage('Cámara lista. Enfoca el QR para registrar la asistencia.', 5000);
+    showStatusMessage('Cámara lista. Enfoca el QR dentro del marco y muévelo lentamente.', 5000);
     qrDetectionActive = true;
     scanCooldown = 0;
 
@@ -225,7 +230,7 @@ async function openCameraScanner() {
           qrDetectionActive = false;
         }
       } catch (error) {
-        userStatus.textContent = 'No se pudo leer el QR. Intenta acercar el código.';
+        showStatusMessage('Mueve el teléfono lentamente y centra el QR dentro del marco.', 2000);
       }
     }, 500);
   } catch (error) {
