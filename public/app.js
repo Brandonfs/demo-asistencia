@@ -29,6 +29,7 @@ let lastScanValue = null;
 let qrDetectionActive = false;
 let scanCooldown = 0;
 let statusResetTimer = null;
+let barcodeDetector = null;
 
 function switchRole(role) {
   rolePanels.forEach((panel) => {
@@ -175,6 +176,13 @@ async function openCameraScanner() {
     userReader.srcObject = mediaStream;
     userReader.playsInline = true;
     userReader.autoplay = true;
+    userReader.muted = true;
+
+    if ('BarcodeDetector' in window) {
+      barcodeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    }
+
+    await userReader.play().catch(() => {});
     showStatusMessage('Cámara lista. Enfoca el QR dentro del marco y muévelo lentamente.', 5000);
     qrDetectionActive = true;
     scanCooldown = 0;
@@ -185,6 +193,11 @@ async function openCameraScanner() {
 
     qrScanTimer = setInterval(async () => {
       if (!qrDetectionActive || !userReader.videoWidth || !userReader.videoHeight) {
+        return;
+      }
+
+      if (!barcodeDetector) {
+        showStatusMessage('Tu navegador no soporta lectura de QR. Prueba con Chrome o Edge en Android.', 3000);
         return;
       }
 
@@ -200,13 +213,20 @@ async function openCameraScanner() {
         canvas.height = userReader.videoHeight;
         context.drawImage(userReader, 0, 0, canvas.width, canvas.height);
 
-        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, canvas.width, canvas.height);
-        if (!code) {
+        const barcodes = await barcodeDetector.detect(canvas);
+        const code = barcodes?.[0];
+        if (!code?.rawValue) {
           return;
         }
 
-        const token = new URL(code.data).searchParams.get('token');
+        let token = null;
+        try {
+          const parsedUrl = new URL(code.rawValue);
+          token = parsedUrl.searchParams.get('token');
+        } catch (error) {
+          token = code.rawValue;
+        }
+
         if (!token || token === lastScanValue) {
           return;
         }
