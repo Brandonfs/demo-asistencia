@@ -291,6 +291,25 @@ tr.late-row td:first-child {
   min-width: 180px;
 }
 
+.toggle-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 240px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.toggle-label input[type='checkbox'] {
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: #38bdf8;
+}
+
 .landing-grid {
   display: grid;
   gap: 1rem;

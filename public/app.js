@@ -210,7 +210,7 @@ function renderAttendanceRows() {
 function applyAttendanceFilters() {
   activeAttendanceFilter = attendanceTypeFilter?.value || 'all';
   activeLateThreshold = lateThresholdInput?.value || '08:30';
-  isLateThresholdActive = (lateThresholdEnabled?.value || 'on') === 'on';
+  isLateThresholdActive = lateThresholdEnabled ? lateThresholdEnabled.checked : true;
   if (lateThresholdInput) {
     lateThresholdInput.disabled = !isLateThresholdActive;
   }

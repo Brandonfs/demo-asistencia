@@ -62,12 +62,9 @@
               Hora límite para tardanza
               <input id="lateThresholdInput" type="time" value="08:30" />
             </label>
-            <label>
-              Activar filtro de tardanza
-              <select id="lateThresholdEnabled">
-                <option value="on">Sí</option>
-                <option value="off">No</option>
-              </select>
+            <label class="toggle-label">
+              <span>Activar filtro de tardanza</span>
+              <input id="lateThresholdEnabled" type="checkbox" checked />
             </label>
             <button id="applyFiltersBtn" type="button">Aplicar filtros</button>
             <button id="exportExcelBtn" type="button" class="secondary">Exportar Excel</button>
